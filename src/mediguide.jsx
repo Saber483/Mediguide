@@ -718,7 +718,7 @@ const translateToLanguage = async (targetLang, onProgress) => {
   if (T[targetLang]) { AI_TRANSLATION_CACHE[targetLang] = T[targetLang]; return T[targetLang]; }
 
   const callClaude = async (entries, batchIndex, total) => {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await fetch("/api/claude", {
       method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({
         model:"claude-sonnet-4-20250514", max_tokens:4000,
@@ -888,7 +888,7 @@ function MedTerm({ children }) {
     setShow(true);
     setLoading(true);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/claude", {
         method:"POST",
         headers:{ "Content-Type":"application/json" },
         body: JSON.stringify({
@@ -2409,7 +2409,7 @@ function OnboardingScreen({ onComplete }) {
     if (!name.trim()||name.trim().length<3) return;
     setInsuranceChecking(true); setInsuranceError(""); setInsuranceValid(false);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/claude", {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:100,
           messages:[{role:"user",content:`Is "${name}" a real health insurance plan or company? Reply ONLY with valid JSON: {"valid":true/false,"suggestion":"corrected name if close, else empty string"}`}]
@@ -2845,7 +2845,7 @@ LANGUAGE: Always respond in ${appLang}. If the user writes in a different langua
 App context: The user${prefs ? ` is in ${prefs.city||prefs.country||"their area"}, speaks ${prefs.language||"English"}, has ${prefs.insurance||"unknown"} insurance.` : " has not set up a profile yet."}`;
 
       const messages = newHistory.map(m => ({ role: m.role==="assistant"?"assistant":"user", content: m.text }));
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/claude", {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:400, system: systemPrompt, messages })
       });
@@ -2992,7 +2992,7 @@ App context: The user${prefs ? ` is in ${prefs.city||prefs.country||"their area"
     if (!symptomInput.trim()) return;
     setLoading(true); setError(null);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/claude", {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:400,
           messages:[{role:"user",content:`You are a medical triage assistant. A patient says: "${symptomInput}"\n\nGenerate exactly 3 short follow-up questions to better understand their condition. Keep questions simple and compassionate. Respond in '${appLang}'.\n\nRespond ONLY with valid JSON (no markdown):\n{"questions":["question 1","question 2","question 3"]}`}]
@@ -3018,7 +3018,7 @@ App context: The user${prefs ? ` is in ${prefs.city||prefs.country||"their area"
       setLoading(true);
       try {
         const conversation = updatedAnswers.map((qa,i)=>`Q${i+1}: ${qa.q}\nA${i+1}: ${qa.a}`).join("\n");
-        const res = await fetch("https://api.anthropic.com/v1/messages", {
+        const res = await fetch("/api/claude", {
           method:"POST", headers:{"Content-Type":"application/json"},
           body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000,
             messages:[{role:"user",content:`You are a medical triage assistant. Patient intake:\n\nInitial complaint: "${symptomInput}"\n\n${conversation}\n\nProvide a thorough assessment. Respond in '${appLang}'.\nRespond ONLY with valid JSON (no markdown):\n{"urgency":"low","summary":"...","specialistType":"...","reason":"...","tip":"...","keywords":["word"]}`}]
