@@ -2888,14 +2888,17 @@ App context: The user${prefs ? ` is in ${prefs.city||prefs.country||"their area"
   // Save profile to Supabase profiles table
   const saveProfile = async (userId, data) => {
     const supabase = await getSupabase();
-    if (!supabase || !userId) return;
+    console.log("saveProfile called, userId:", userId, "supabase:", !!supabase);
+    if (!supabase || !userId) { console.error("saveProfile: missing supabase or userId"); return; }
     try {
-      await supabase.from("profiles").upsert({
+      const { data: result, error } = await supabase.from("profiles").upsert({
         id: userId,
         prefs: data,
         updated_at: new Date().toISOString()
       }, { onConflict: "id" });
-    } catch(e) { console.error("saveProfile error:", e); }
+      if (error) console.error("saveProfile upsert error:", JSON.stringify(error));
+      else console.log("saveProfile success");
+    } catch(e) { console.error("saveProfile exception:", e); }
   };
 
   // Load profile from Supabase profiles table
