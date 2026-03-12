@@ -2379,18 +2379,25 @@ function OnboardingScreen({ onComplete }) {
         : { label:"Postal Code", placeholder:"Enter your postal code", format:/\S+/, maxLength:12, hint:"Enter your postal or area code" })
     : null;
 
+  // Zippopotam.us country codes for supported countries
+  const ZIPPO_CODES = {
+    "United States":"us","Canada":"ca","Germany":"de","France":"fr","Italy":"it",
+    "Spain":"es","Netherlands":"nl","Belgium":"be","Austria":"at","Switzerland":"ch",
+    "Australia":"au","New Zealand":"nz","Denmark":"dk","Norway":"no","Sweden":"se",
+    "Finland":"fi","Poland":"pl","Czech Republic":"cz","Hungary":"hu","Slovakia":"sk",
+    "Mexico":"mx","Brazil":"br","Argentina":"ar","Colombia":"co","Chile":"cl",
+    "South Africa":"za","India":"in","Japan":"jp","South Korea":"kr","China":"cn",
+    "Russia":"ru","Turkey":"tr","Portugal":"pt","Greece":"gr","Bulgaria":"bg",
+    "Romania":"ro","Croatia":"hr","Slovenia":"si","Estonia":"ee","Latvia":"lv",
+    "Lithuania":"lt","Luxembourg":"lu","Iceland":"is","Philippines":"ph",
+    "Thailand":"th","Singapore":"sg","Malaysia":"my","Pakistan":"pk",
+  };
+
   const validateCode = async (code) => {
     setCodeLoading(true); setCodeError("");
     try {
-      if (answers.country==="United States") {
-        const res = await fetch("https://api.zippopotam.us/us/"+code);
-        if (res.ok) {
-          const data = await res.json();
-          const place = data.places[0];
-          setAnswers(p=>({...p, locationCity:place["place name"], locationRegion:place["state abbreviation"]}));
-          setCodeValid(true);
-        } else { setCodeError("That ZIP code doesn't exist in the United States."); setCodeValid(false); }
-      } else if (answers.country==="United Kingdom") {
+      if (answers.country === "United Kingdom") {
+        // UK uses postcodes.io
         const res = await fetch("https://api.postcodes.io/postcodes/"+encodeURIComponent(code)+"/validate");
         if (res.ok) {
           const data = await res.json();
@@ -2400,7 +2407,29 @@ function OnboardingScreen({ onComplete }) {
             setCodeValid(true);
           } else { setCodeError("That postcode doesn't exist in the United Kingdom."); setCodeValid(false); }
         } else { setCodeValid(true); }
-      } else { setAnswers(p=>({...p,locationCity:"",locationRegion:""})); setCodeValid(true); }
+      } else if (ZIPPO_CODES[answers.country]) {
+        // Use zippopotam.us for all supported countries
+        const countryCode = ZIPPO_CODES[answers.country];
+        const res = await fetch("https://api.zippopotam.us/"+countryCode+"/"+encodeURIComponent(code));
+        if (res.ok) {
+          const data = await res.json();
+          const place = data.places?.[0];
+          if (place) {
+            setAnswers(p=>({...p,
+              locationCity: place["place name"] || "",
+              locationRegion: place["state"] || place["state abbreviation"] || ""
+            }));
+          }
+          setCodeValid(true);
+        } else {
+          setCodeError("That postal code doesn't exist in "+answers.country+". Please check and try again.");
+          setCodeValid(false);
+        }
+      } else {
+        // Country not supported by any API — just do format check
+        setAnswers(p=>({...p,locationCity:"",locationRegion:""}));
+        setCodeValid(true);
+      }
     } catch(e) { setCodeValid(true); }
     setCodeLoading(false);
   };
