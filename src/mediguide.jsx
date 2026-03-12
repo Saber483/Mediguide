@@ -2712,7 +2712,48 @@ function ProfilePage({ user, prefs, onSave, onSignOut }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(prefs||blank);
 
-  const save = () => { onSave(draft); setEditing(false); };
+  const [profileCodeValid, setProfileCodeValid] = useState(true);
+  const [profileCodeError, setProfileCodeError] = useState("");
+  const [profileCodeLoading, setProfileCodeLoading] = useState(false);
+
+  const ZIPPO_CODES_PROFILE = {
+    "United States":"us","Canada":"ca","Germany":"de","France":"fr","Italy":"it",
+    "Spain":"es","Netherlands":"nl","Belgium":"be","Austria":"at","Switzerland":"ch",
+    "Australia":"au","New Zealand":"nz","Denmark":"dk","Norway":"no","Sweden":"se",
+    "Finland":"fi","Poland":"pl","Czech Republic":"cz","Hungary":"hu","Mexico":"mx",
+    "Brazil":"br","Argentina":"ar","Colombia":"co","Chile":"cl","South Africa":"za",
+    "India":"in","Japan":"jp","South Korea":"kr","Russia":"ru","Turkey":"tr",
+    "Portugal":"pt","Greece":"gr","Philippines":"ph","Pakistan":"pk",
+  };
+
+  const validateProfileCode = async (code, country) => {
+    if (!code.trim()) return;
+    setProfileCodeLoading(true); setProfileCodeError("");
+    try {
+      if (country === "United Kingdom") {
+        const res = await fetch("https://api.postcodes.io/postcodes/"+encodeURIComponent(code)+"/validate");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.result) { setProfileCodeValid(true); }
+          else { setProfileCodeError("That postcode doesn't exist in the UK."); setProfileCodeValid(false); }
+        }
+      } else if (ZIPPO_CODES_PROFILE[country]) {
+        const res = await fetch("https://api.zippopotam.us/"+ZIPPO_CODES_PROFILE[country]+"/"+encodeURIComponent(code));
+        if (res.ok) {
+          const data = await res.json();
+          const place = data.places?.[0];
+          if (place) setDraft(p=>({...p, city: place["place name"]+(place["state"]?", "+place["state"]:"") }));
+          setProfileCodeValid(true);
+        } else { setProfileCodeError("That postal code doesn't exist in "+country+"."); setProfileCodeValid(false); }
+      } else { setProfileCodeValid(true); }
+    } catch(e) { setProfileCodeValid(true); }
+    setProfileCodeLoading(false);
+  };
+
+  const save = () => {
+    if (!profileCodeValid) return;
+    onSave(draft); setEditing(false);
+  };
   const toggleCond = (val) => setDraft(p=>({...p,conditions:p.conditions.includes(val)?p.conditions.filter(x=>x!==val):[...p.conditions,val]}));
   const display = (key) => {
     if (!prefs||!prefs[key]) return t("notSet");
@@ -2753,7 +2794,13 @@ function ProfilePage({ user, prefs, onSave, onSignOut }) {
               ? <div style={{display:"flex",flexDirection:"column",gap:8}}>
                   {field.key==="country"&&<select value={draft.country||""} onChange={e=>setDraft(p=>({...p,country:e.target.value}))} style={{width:"100%",border:"1.5px solid #e0e7ff",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",background:"#fff"}}><option value="">Select...</option>{COUNTRIES.map(o=><option key={o}>{o}</option>)}</select>}
                   {field.key==="city"&&<input value={draft.city||""} onChange={e=>setDraft(p=>({...p,city:e.target.value}))} placeholder="City and region" style={{width:"100%",border:"1.5px solid #e0e7ff",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",boxSizing:"border-box"}}/>}
-                  {field.key==="locationCode"&&<input value={draft.locationCode||""} onChange={e=>setDraft(p=>({...p,locationCode:e.target.value}))} placeholder="Postal / ZIP / Area code" style={{width:"100%",border:"1.5px solid #e0e7ff",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",boxSizing:"border-box"}}/>}
+                  {field.key==="locationCode"&&<div>
+                    <div style={{position:"relative"}}>
+                      <input value={draft.locationCode||""} onChange={e=>{setDraft(p=>({...p,locationCode:e.target.value}));setProfileCodeValid(true);setProfileCodeError("");}} onBlur={e=>validateProfileCode(e.target.value, draft.country)} placeholder="Postal / ZIP / Area code" style={{width:"100%",border:"1.5px solid "+(profileCodeError?"#E05C5C":profileCodeValid&&draft.locationCode?"#3AAD8E":"#e0e7ff"),borderRadius:10,padding:"10px 40px 10px 12px",fontSize:14,outline:"none",boxSizing:"border-box"}}/>
+                      <div style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",fontSize:14}}>{profileCodeLoading?"⏳":profileCodeError?"❌":profileCodeValid&&draft.locationCode?"✅":"📍"}</div>
+                    </div>
+                    {profileCodeError&&<div style={{fontSize:12,color:"#E05C5C",marginTop:4}}>{profileCodeError}</div>}
+                  </div>}
                   {field.key==="insurance"&&<select value={draft.insurance||""} onChange={e=>setDraft(p=>({...p,insurance:e.target.value}))} style={{width:"100%",border:"1.5px solid #e0e7ff",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",background:"#fff"}}><option value="">Select...</option>{INSURANCE_OPTIONS.map(o=><option key={o}>{o}</option>)}</select>}
                   {field.key==="insurance"&&draft.insurance==="Other"&&<input value={draft.otherInsurance||""} onChange={e=>setDraft(p=>({...p,otherInsurance:e.target.value}))} placeholder="Type insurance..." style={{width:"100%",border:"2px solid #4A90D9",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",boxSizing:"border-box",background:"#f0f7ff"}}/>}
                   {field.key==="language"&&<select value={draft.language||""} onChange={e=>setDraft(p=>({...p,language:e.target.value}))} style={{width:"100%",border:"1.5px solid #e0e7ff",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",background:"#fff"}}><option value="">Select...</option>{LANGUAGE_OPTIONS.map(o=><option key={o}>{o}</option>)}</select>}
