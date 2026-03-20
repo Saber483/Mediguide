@@ -3529,6 +3529,7 @@ App context: The user${prefs ? ` is in ${prefs.city||prefs.country||"their area"
                 </div>
               </div>
             )}
+            {prefs && (
               <div style={{ background:"linear-gradient(135deg,#f0f7ff,#e8eeff)", border:"1.5px solid #c0d8ff", borderRadius:12, padding:"10px 14px", marginBottom:14, display:"flex", flexWrap:"wrap", gap:8, alignItems:"center" }}>
                 <span style={{ fontSize:12, fontWeight:700, color:"#4A90D9" }}>{t("filteredByPrefs")}</span>
                 {browseFromSymptoms?.sameDay && <span style={{ background:"#3AAD8E", color:"#fff", fontSize:11, fontWeight:700, padding:"3px 10px", borderRadius:20 }}>{t("sameDayPriority")}</span>}
