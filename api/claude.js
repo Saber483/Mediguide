@@ -5,7 +5,7 @@ export default async function handler(req, res) {
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({ error: "Missing ANTHROPIC_API_KEY" });
+    return res.status(500).json({ error: "Missing ANTHROPIC_API_KEY", hint: "Check Vercel environment variables" });
   }
 
   try {
@@ -19,16 +19,18 @@ export default async function handler(req, res) {
       body: JSON.stringify(req.body),
     });
 
-    const data = await response.json();
-    
-    if (!response.ok) {
-      console.error("Anthropic error:", response.status, JSON.stringify(data));
-      return res.status(response.status).json(data);
-    }
+    const text = await response.text();
+    let data;
+    try { data = JSON.parse(text); } catch(e) { data = { raw: text }; }
 
-    return res.status(200).json(data);
+    // Always return the full response so we can debug
+    return res.status(response.status).json({ 
+      _status: response.status,
+      _ok: response.ok,
+      ...data 
+    });
+
   } catch (error) {
-    console.error("Proxy exception:", error.message);
-    return res.status(500).json({ error: "Proxy error: " + error.message });
+    return res.status(500).json({ error: "Proxy exception", message: error.message });
   }
 }
