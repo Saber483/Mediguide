@@ -1141,6 +1141,7 @@ function BookingModal({ doc, onClose, onConfirm, prefs }) {
   const [visitType, setVisitType]               = useState("");
   const [visitReason, setVisitReason]           = useState("");
   const [patientName, setPatientName]           = useState("");
+  const [patientEmail, setPatientEmail]         = useState("");
   const [patientDOB, setPatientDOB]             = useState("");
   const [patientPhone, setPatientPhone]         = useState("");
   const [dobError, setDobError]                 = useState("");
@@ -1322,6 +1323,11 @@ function BookingModal({ doc, onClose, onConfirm, prefs }) {
               <label style={{fontSize:12,fontWeight:700,color:"#4A90D9",letterSpacing:1,display:"block",marginBottom:6}}>{t("bkFullName")}</label>
               <input value={patientName} onChange={e=>setPatientName(e.target.value)} placeholder={t("bkNamePlaceholder")}
                 style={{width:"100%",border:"1.5px solid "+(patientName.trim().length>1?"#3AAD8E":"#e0e7ff"),borderRadius:12,padding:"13px 14px",fontSize:14,outline:"none",boxSizing:"border-box",fontFamily:"inherit",background:patientName.trim().length>1?"#f0fff8":"#fff",transition:"border 0.2s"}}/>
+            </div>
+            <div>
+              <label style={{fontSize:12,fontWeight:700,color:"#4A90D9",letterSpacing:1,display:"block",marginBottom:6}}>EMAIL ADDRESS</label>
+              <input value={patientEmail} onChange={e=>setPatientEmail(e.target.value)} placeholder="your@email.com" type="email"
+                style={{width:"100%",border:"1.5px solid "+(patientEmail.includes("@")?"#3AAD8E":"#e0e7ff"),borderRadius:12,padding:"13px 14px",fontSize:14,outline:"none",boxSizing:"border-box",fontFamily:"inherit",background:patientEmail.includes("@")?"#f0fff8":"#fff",transition:"border 0.2s"}}/>
             </div>
             <div>
               <label style={{fontSize:12,fontWeight:700,color:"#4A90D9",letterSpacing:1,display:"block",marginBottom:6}}>{t("bkDOB")}</label>
@@ -1834,7 +1840,27 @@ function BookingModal({ doc, onClose, onConfirm, prefs }) {
                   style={{flex:2,background:canAdvance()?"linear-gradient(135deg,#4A90D9,#7B5EA7)":"#ccc",color:"#fff",border:"none",borderRadius:12,padding:14,fontSize:15,fontWeight:700,cursor:canAdvance()?"pointer":"not-allowed"}}>
                   Continue →
                 </button>
-              : <button onClick={()=>{setStep("done");onConfirm&&onConfirm({doc,date:formatDate(selectedDate),time:selectedTime});}}
+              : <button onClick={async()=>{
+                  setStep("done");
+                  onConfirm&&onConfirm({doc,date:formatDate(selectedDate),time:selectedTime});
+                  // Send confirmation email
+                  if (patientEmail) {
+                    try {
+                      await fetch("/api/send-email", {
+                        method:"POST", headers:{"Content-Type":"application/json"},
+                        body: JSON.stringify({
+                          patientName, patientEmail,
+                          doctorName: doc.name,
+                          doctorHospital: doc.hospital,
+                          date: formatDate(selectedDate),
+                          time: selectedTime,
+                          visitType: visitType||"General visit",
+                          insurance: prefs?.insurance||"Not specified"
+                        })
+                      });
+                    } catch(e) { console.error("Email error:", e); }
+                  }
+                }}
                   style={{flex:2,background:"linear-gradient(135deg,#3AAD8E,#4A90D9)",color:"#fff",border:"none",borderRadius:12,padding:14,fontSize:15,fontWeight:700,cursor:"pointer"}}>
                   Confirm Booking ✓
                 </button>
