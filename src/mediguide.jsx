@@ -1224,8 +1224,7 @@ function BookingModal({ doc, onClose, onConfirm, prefs }) {
   const progressIdx = Math.min(currentIdx, PROGRESS_LABELS.length - 1);
 
   // Calendar helpers
-  const unavailable = new Set();
-  for (let i=1;i<=31;i++) { if((i*doc.id)%5===0) unavailable.add(i); }
+  const unavailable = new Set(); // Real availability will come from doctor data
   const TIME_SLOTS = [
     {time:"8:00 AM",period:"Morning"},{time:"8:30 AM",period:"Morning"},{time:"9:00 AM",period:"Morning"},
     {time:"9:30 AM",period:"Morning"},{time:"10:00 AM",period:"Morning"},{time:"10:30 AM",period:"Morning"},
@@ -1233,7 +1232,7 @@ function BookingModal({ doc, onClose, onConfirm, prefs }) {
     {time:"2:00 PM",period:"Afternoon"},{time:"2:30 PM",period:"Afternoon"},{time:"3:00 PM",period:"Afternoon"},
     {time:"4:00 PM",period:"Afternoon"},{time:"4:30 PM",period:"Afternoon"},
   ];
-  const getBookedSlots = (date) => { const b=new Set(); TIME_SLOTS.forEach((s,i)=>{if((date*doc.id*(i+1))%4===0)b.add(s.time);}); return b; };
+  const getBookedSlots = (date) => { const b=new Set(); TIME_SLOTS.forEach((s,i)=>{if((date*doc.id*(i+1))%7===0)b.add(s.time);}); return b; };
   const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   const DAYS   = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
   const getDaysInMonth = (m,y) => new Date(y,m+1,0).getDate();
