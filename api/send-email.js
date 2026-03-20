@@ -4,15 +4,19 @@ export default async function handler(req, res) {
   }
 
   const apiKey = process.env.RESEND_API_KEY;
+  
+  // Debug: check if key exists
   if (!apiKey) {
-    return res.status(500).json({ error: "Missing RESEND_API_KEY" });
+    return res.status(500).json({ 
+      error: "Missing RESEND_API_KEY",
+      env_keys: Object.keys(process.env).filter(k => !k.includes('SECRET')).join(', ')
+    });
   }
 
   const { patientName, patientEmail, doctorName, doctorHospital, date, time, visitType, insurance } = req.body;
 
   try {
-    // Email to patient
-    const patientEmail_res = await fetch("https://api.resend.com/emails", {
+    const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -21,7 +25,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         from: "MediGuide <onboarding@resend.dev>",
         to: patientEmail,
-        subject: `Appointment Request Confirmed — ${doctorName}`,
+        subject: `Appointment Request — ${doctorName}`,
         html: `
           <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
             <div style="background: linear-gradient(135deg, #4A90D9, #7B5EA7); padding: 24px; border-radius: 16px 16px 0 0; text-align: center;">
@@ -31,7 +35,6 @@ export default async function handler(req, res) {
             <div style="background: #f8fbff; padding: 24px; border-radius: 0 0 16px 16px; border: 1px solid #e0e7ff;">
               <h2 style="color: #1a1a2e;">Hi ${patientName}! 👋</h2>
               <p style="color: #555;">Your appointment request has been sent to <strong>${doctorName}</strong>. The clinic will contact you to confirm.</p>
-              
               <div style="background: white; border: 1.5px solid #e0e7ff; border-radius: 12px; padding: 16px; margin: 16px 0;">
                 <h3 style="color: #4A90D9; margin: 0 0 12px;">Appointment Details</h3>
                 <p style="margin: 6px 0; color: #333;">👨‍⚕️ <strong>Doctor:</strong> ${doctorName}</p>
@@ -41,27 +44,24 @@ export default async function handler(req, res) {
                 <p style="margin: 6px 0; color: #333;">🩺 <strong>Visit Type:</strong> ${visitType}</p>
                 <p style="margin: 6px 0; color: #333;">🛡️ <strong>Insurance:</strong> ${insurance}</p>
               </div>
-
-              <div style="background: #fff8e8; border: 1.5px solid #F5A623; border-radius: 12px; padding: 16px; margin: 16px 0;">
-                <p style="margin: 0; color: #7A5000;">⚠️ <strong>Important:</strong> This is a request, not a confirmed appointment. The clinic will contact you within 1-2 business days to confirm.</p>
+              <div style="background: #fff8e8; border: 1.5px solid #F5A623; border-radius: 12px; padding: 16px;">
+                <p style="margin: 0; color: #7A5000;">⚠️ <strong>Important:</strong> This is a request, not a confirmed appointment. The clinic will contact you within 1-2 business days.</p>
               </div>
-
-              <p style="color: #888; font-size: 12px; margin-top: 24px;">This email was sent by MediGuide — Your Health Navigator. <a href="https://mediguide-nine.vercel.app" style="color: #4A90D9;">mediguide-nine.vercel.app</a></p>
             </div>
           </div>
         `,
       }),
     });
 
-    const result = await patientEmail_res.json();
-
-    if (!patientEmail_res.ok) {
-      return res.status(500).json({ error: "Failed to send email", details: result });
+    const data = await response.json();
+    
+    if (!response.ok) {
+      return res.status(500).json({ error: "Resend error", details: data });
     }
 
-    return res.status(200).json({ success: true });
+    return res.status(200).json({ success: true, id: data.id });
 
   } catch (error) {
-    return res.status(500).json({ error: "Email error: " + error.message });
+    return res.status(500).json({ error: "Exception: " + error.message });
   }
 }
