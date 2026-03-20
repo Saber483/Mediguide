@@ -721,8 +721,8 @@ const translateToLanguage = async (targetLang, onProgress) => {
     const res = await fetch("/api/claude", {
       method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({
-        model:"claude-sonnet-4-20250514", max_tokens:4000,
-        messages:[{ role:"user", content:`Translate these UI strings from English to ${targetLang}. Return ONLY a raw JSON object, no markdown, no backticks, no explanation.\n\n${JSON.stringify(Object.fromEntries(entries))}`}]
+        model:"claude-sonnet-4-20250514", max_tokens:8000,
+        messages:[{ role:"user", content:`Translate these UI strings from English to ${targetLang}. Return ONLY a raw JSON object, no markdown, no backticks, no explanation. Every key must be included.\n\n${JSON.stringify(Object.fromEntries(entries))}`}]
       })
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -736,8 +736,8 @@ const translateToLanguage = async (targetLang, onProgress) => {
 
   try {
     const entries = Object.entries(T.English);
-    const size = Math.ceil(entries.length / 3);
-    const batches = [entries.slice(0, size), entries.slice(size, size*2), entries.slice(size*2)];
+    const size = Math.ceil(entries.length / 5);
+    const batches = [entries.slice(0, size), entries.slice(size, size*2), entries.slice(size*2, size*3), entries.slice(size*3, size*4), entries.slice(size*4)];
     if (onProgress) onProgress(5);
     // Run all 3 batches in parallel
     const results = await Promise.all(batches.map((b, i) => callClaude(b, i, batches.length)));
