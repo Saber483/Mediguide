@@ -2375,6 +2375,7 @@ function OnboardingScreen({ onComplete }) {
   const t = useT();
   const STEPS = [
     { id:"language",     emoji:"🌐", title:t("obLangTitle"),       subtitle:t("obLangSub"),       type:"single",  options:LANGUAGE_OPTIONS },
+    { id:"languageStrict", emoji:"🗣️", title:"Language Preference", subtitle:"How important is it that your doctor speaks your language?", type:"single", options:["Required — only show doctors who speak my language", "Preferred — show bilingual doctors first", "Not important — show all doctors"] },
     { id:"country",      emoji:"🌍", title:t("obCountryTitle"),    subtitle:t("obCountrySub"),    type:"country" },
     { id:"city",         emoji:"🏙️", title:t("obCityTitle"),       subtitle:t("obCitySub"),       type:"city" },
     { id:"locationCode", emoji:"📍", title:t("obCodeTitle"),       subtitle:t("obCodeSub"),       type:"code" },
@@ -2384,7 +2385,7 @@ function OnboardingScreen({ onComplete }) {
     { id:"doctorGender", emoji:"👨‍⚕️", title:t("obGenderTitle"),     subtitle:t("obGenderSub"),     type:"single",  options:GENDER_OPTIONS },
   ];
   const [idx, setIdx] = useState(0);
-  const [answers, setAnswers] = useState({ country:"", city:"", locationCode:"", locationCity:"", locationRegion:"", gpsLat:"", gpsLng:"", gpsArea:"", insurance:"", otherInsurance:"", conditions:[], otherCondition:"", language:"", otherLanguage:"", doctorGender:"" });
+  const [answers, setAnswers] = useState({ country:"", city:"", locationCode:"", locationCity:"", locationRegion:"", gpsLat:"", gpsLng:"", gpsArea:"", insurance:"", otherInsurance:"", conditions:[], otherCondition:"", language:"", otherLanguage:"", doctorGender:"", languageStrict:"Preferred — show bilingual doctors first" });
   const [countrySearch, setCountrySearch] = useState("");
   const [codeTouched, setCodeTouched] = useState(false);
   const [codeValid, setCodeValid] = useState(false);
@@ -3590,7 +3591,13 @@ App context: The user${prefs ? ` is in ${prefs.city||prefs.country||"their area"
               }
               if (!ignorePrefs) {
                 if (prefGender) filtered=filtered.filter(d=>d.gender===prefGender);
-                if (prefLang) filtered=filtered.filter(d=>d.languages.includes(prefLang));
+                // Language filtering based on user's strictness preference
+                const langStrict = prefs?.languageStrict || "Preferred — show bilingual doctors first";
+                if (prefLang && langStrict.startsWith("Required")) {
+                  // Hard filter — only show doctors who speak their language
+                  filtered=filtered.filter(d=>d.languages.includes(prefLang));
+                }
+                // "Preferred" and "Not important" don't hard filter — just sort (done below)
               }
               filtered=[...filtered].sort((a,b)=>{
                 // Same-day priority: if coming from symptom checker with sameDay=true, available doctors first
