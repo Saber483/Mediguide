@@ -2253,6 +2253,34 @@ function LoginScreen({ onLogin, lang="English" }) {
 
   const switchMode = (m) => { setMode(m); setError(""); setSuccess(""); setName(""); setPassword(""); };
 
+  const handleGoogleSignIn = async () => {
+    const supabase = await getSupabase();
+    if (!supabase) return setError("Service unavailable.");
+    setLoading(true);
+    const { error: err } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin }
+    });
+    setLoading(false);
+    if (err) return setError(err.message);
+  };
+
+  const handleForgotPassword = async () => {
+    setError(""); setSuccess("");
+    const emailTrim = email.trim().toLowerCase();
+    if (!emailTrim) return setError(t("enterEmail"));
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) return setError(t("validEmail"));
+    const supabase = await getSupabase();
+    if (!supabase) return setError("Service unavailable.");
+    setLoading(true);
+    const { error: err } = await supabase.auth.resetPasswordForEmail(emailTrim, {
+      redirectTo: window.location.origin,
+    });
+    setLoading(false);
+    if (err) return setError(err.message);
+    setSuccess("Password reset email sent! Check your inbox.");
+  };
+
   const handleSubmit = async () => {
     setError(""); setSuccess("");
     const emailTrim = email.trim().toLowerCase();
@@ -2325,6 +2353,22 @@ function LoginScreen({ onLogin, lang="English" }) {
           </div>
         )}
 
+        {/* Google Sign In Button */}
+        {(mode==="login"||mode==="signup") && (
+          <div style={{marginBottom:16}}>
+            <button onClick={handleGoogleSignIn} disabled={loading}
+              style={{width:"100%",background:"#fff",color:"#333",border:"1.5px solid #e0e0e0",borderRadius:12,padding:12,fontSize:14,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+              <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+              Continue with Google
+            </button>
+            <div style={{display:"flex",alignItems:"center",gap:10,margin:"14px 0"}}>
+              <div style={{flex:1,height:1,background:"#ffffff22"}}/>
+              <span style={{color:"#666",fontSize:12}}>or</span>
+              <div style={{flex:1,height:1,background:"#ffffff22"}}/>
+            </div>
+          </div>
+        )}
+
         {mode==="signup" && (
           <div style={{marginBottom:14}}>
             <label style={{color:"#aaa",fontSize:12,fontWeight:600,display:"block",marginBottom:6}}>{t("fullName")}</label>
@@ -2359,9 +2403,25 @@ function LoginScreen({ onLogin, lang="English" }) {
         <div style={{textAlign:"center",marginTop:14,fontSize:13,color:"#888"}}>
           {mode==="login"
             ? <>{t("noAccount")} <span onClick={()=>switchMode("signup")} style={{color:"#4A90D9",cursor:"pointer",fontWeight:600}}>{t("signUp")}</span></>
-            : <>{t("haveAccount")} <span onClick={()=>switchMode("login")} style={{color:"#4A90D9",cursor:"pointer",fontWeight:600}}>{t("logIn")}</span></>
+            : mode==="signup"
+            ? <>{t("haveAccount")} <span onClick={()=>switchMode("login")} style={{color:"#4A90D9",cursor:"pointer",fontWeight:600}}>{t("logIn")}</span></>
+            : <span onClick={()=>switchMode("login")} style={{color:"#4A90D9",cursor:"pointer",fontWeight:600}}>← Back to Login</span>
           }
         </div>
+        {mode==="login" && (
+          <div style={{textAlign:"center",marginTop:10,fontSize:13}}>
+            <span onClick={()=>switchMode("forgot")} style={{color:"#888",cursor:"pointer",textDecoration:"underline"}}>Forgot password?</span>
+          </div>
+        )}
+        {mode==="forgot" && (
+          <div style={{marginTop:16}}>
+            <p style={{color:"#aaa",fontSize:13,textAlign:"center",marginBottom:16}}>Enter your email and we'll send you a reset link.</p>
+            <button onClick={handleForgotPassword} disabled={loading}
+              style={{width:"100%",background:loading?"#555":"linear-gradient(135deg,#4A90D9,#7B5EA7)",color:"#fff",border:"none",borderRadius:12,padding:14,fontSize:15,fontWeight:700,cursor:loading?"not-allowed":"pointer"}}>
+              {loading ? "⏳ Sending..." : "Send Reset Link →"}
+            </button>
+          </div>
+        )}
 
 
       </div>
@@ -2921,7 +2981,8 @@ export default function MediGuide() {
 
   // Update welcome message when language changes
   React.useEffect(() => {
-    setAegisMessages([{ role:"assistant", text:T[appLang]?.aegisWelcome || T.English.aegisWelcome }]);
+    const welcome = T[appLang]?.aegisWelcome || AI_TRANSLATION_CACHE[appLang]?.aegisWelcome || T.English.aegisWelcome;
+    setAegisMessages([{ role:"assistant", text:welcome }]);
   }, [appLang]);
 
   const showToast = (msg="✅ Profile saved!") => { setToastMsg(msg); setToast(true); setTimeout(()=>setToast(false),3000); };
@@ -2938,18 +2999,35 @@ export default function MediGuide() {
 1. Help users navigate the MediGuide app (symptom checker, booking appointments, finding doctors, no-insurance resources, profile settings)
 2. Explain medical terms in plain simple language with a memorable analogy
 3. Answer general health questions clearly and compassionately
-4. Help users understand their options
+4. Give PERSONALIZED answers based on the user's specific profile below
 
 IMPORTANT: You are NOT a symptom checker or a replacement for medical advice. For serious health concerns always encourage users to use the symptom checker or see a doctor. Keep answers concise, warm, and simple — many users may have limited health literacy. Never use jargon without explaining it.
 
 LANGUAGE: Always respond in ${appLang}. If the user writes in a different language, still respond in ${appLang}.
 
-App context: The user${prefs ? ` is in ${prefs.city||prefs.country||"their area"}, speaks ${prefs.language||"English"}, has ${prefs.insurance||"unknown"} insurance.` : " has not set up a profile yet."}`;
+USER PROFILE:
+- Name: ${user?.name || "Unknown"}
+- Location: ${prefs?.city ? prefs.city + (prefs.country ? ", " + prefs.country : "") : prefs?.country || "Not set"}
+- Preferred language: ${prefs?.language === "Other" ? prefs?.otherLanguage : prefs?.language || "English"} (${prefs?.languageStrict || "Preferred"})
+- Insurance: ${prefs?.insurance === "Other" ? prefs?.otherInsurance : prefs?.insurance || "Not set"}
+- Health conditions: ${prefs?.conditions?.length > 0 ? prefs.conditions.join(", ") : "None specified"}
+- Doctor gender preference: ${prefs?.doctorGender || "No preference"}
+
+${aiResult ? `RECENT SYMPTOM CHECK RESULTS:
+- Summary: ${aiResult.summary || "N/A"}
+- Urgency level: ${aiResult.urgency || "N/A"}
+- Recommended specialist: ${aiResult.specialistType || "N/A"}
+- Tip: ${aiResult.tip || "N/A"}` : "No recent symptom check."}
+
+${matchedDocs?.length > 0 ? `DOCTORS CURRENTLY RECOMMENDED FOR THIS USER:
+${matchedDocs.map((d, i) => `${i+1}. Dr. ${d.name} — ${d.specialty} at ${d.hospital} (${d.distance} miles away, languages: ${d.languages?.join(", ")})`).join("\n")}` : "No doctors matched yet."}
+
+When answering questions about which doctor to see, refer to the matched doctors above by name. When answering about insurance or coverage, use their actual insurance. Be specific and personal.`;
 
       const messages = newHistory.map(m => ({ role: m.role==="assistant"?"assistant":"user", content: m.text }));
       const res = await fetch("/api/claude", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:400, system: systemPrompt, messages })
+        body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:600, system: systemPrompt, messages })
       });
       const data = await res.json();
       const reply = data.content.map(b=>b.text||"").join("").trim();
@@ -3142,7 +3220,14 @@ App context: The user${prefs ? ` is in ${prefs.city||prefs.country||"their area"
         const userNoInsurance = prefs && prefs.insurance === "No Insurance";
 
         // Hard filter: no-insurance users only see doctors that accept them
-        const pool = userNoInsurance ? DOCTORS.filter(d => d.acceptsNoInsurance) : DOCTORS;
+        let pool = userNoInsurance ? DOCTORS.filter(d => d.acceptsNoInsurance) : DOCTORS;
+
+        // Language hard filter if user requires it
+        const langStrict = prefs?.languageStrict || "Preferred — show bilingual doctors first";
+        if (prefLang && langStrict.startsWith("Required")) {
+          const langFiltered = pool.filter(d => d.languages.includes(prefLang));
+          if (langFiltered.length > 0) pool = langFiltered; // only filter if results exist
+        }
 
         // Score every doctor in the pool
         const scored = pool.map(d => {
@@ -3150,7 +3235,12 @@ App context: The user${prefs ? ` is in ${prefs.city||prefs.country||"their area"
           if (d.specialty.toLowerCase().includes(specialistType) || specialistType.includes(d.specialty.toLowerCase())) score += 10;
           const kwMatch = d.keywords.some(k => kw.some(q => k.includes(q) || q.includes(k)));
           if (kwMatch) score += 5;
-          if (prefLang && d.languages.includes(prefLang)) score += 4;
+          // Language scoring based on strictness
+          if (prefLang && d.languages.includes(prefLang)) {
+            if (langStrict.startsWith("Required")) score += 8;
+            else if (langStrict.startsWith("Preferred")) score += 4;
+            // "Not important" gets no bonus
+          }
           if (prefGender && d.gender === prefGender) score += 3;
           if (d.distance <= maxDistance) score += 2;
           if (d.available) score += 1;
