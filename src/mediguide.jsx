@@ -3118,6 +3118,12 @@ When answering questions about which doctor to see, refer to the matched doctors
   const handleSaveProfile = async (p) => {
     setPrefs(p);
     if (user && user.id) await saveProfile(user.id, p);
+    // Pre-translate if custom language was set
+    const customL = p.language === "Other" ? p.otherLanguage : null;
+    if (customL && customL.trim() && !T[customL] && !AI_TRANSLATION_CACHE[customL]) {
+      showToast("🌐 Translating to " + customL + "...");
+      await translateToLanguage(customL.trim());
+    }
     showToast("✅ Profile saved!");
   };
 
