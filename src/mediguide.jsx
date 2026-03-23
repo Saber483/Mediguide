@@ -2958,6 +2958,29 @@ export default function MediGuide() {
   const [browseSearch, setBrowseSearch] = useState("");
   const [browseFromSymptoms, setBrowseFromSymptoms] = useState(null);
   const [wantsSameDay, setWantsSameDay] = useState(null); // null | true | false
+  const [realDoctors, setRealDoctors] = useState([]);
+  const [doctorsLoading, setDoctorsLoading] = useState(false);
+  const [doctorsSource, setDoctorsSource] = useState("demo"); // "demo" | "nppes"
+
+  // Fetch real doctors from NPPES for US users
+  const fetchRealDoctors = async (userPrefs) => {
+    if (!userPrefs || userPrefs.country !== "United States") return;
+    setDoctorsLoading(true);
+    try {
+      const params = new URLSearchParams({ limit: 50 });
+      if (userPrefs.locationCode) params.append("zip", userPrefs.locationCode);
+      else if (userPrefs.city) params.append("city", userPrefs.city);
+      const res = await fetch("/api/doctors?" + params.toString());
+      if (res.ok) {
+        const data = await res.json();
+        if (data.doctors && data.doctors.length > 0) {
+          setRealDoctors(data.doctors);
+          setDoctorsSource("nppes");
+        }
+      }
+    } catch(e) { console.error("fetchRealDoctors error:", e); }
+    setDoctorsLoading(false);
+  };
   const [bookingDoc, setBookingDoc] = useState(null);
   const [maxDistance, setMaxDistance] = useState(10);
   const [toast, setToast] = useState(false);
@@ -3099,6 +3122,7 @@ When answering questions about which doctor to see, refer to the matched doctors
       setPrefs(saved);
       setScreen("app");
       showToast("👋 Welcome back, " + u.name + "!");
+      fetchRealDoctors(saved);
     } else {
       setScreen("onboarding");
     }
@@ -3107,6 +3131,7 @@ When answering questions about which doctor to see, refer to the matched doctors
   const handleOnboardingComplete = async (p) => {
     setPrefs(p);
     if (user && user.id) await saveProfile(user.id, p);
+    fetchRealDoctors(p);
     // Pre-translate if custom language
     const customL = p.language === "Other" ? p.otherLanguage : null;
     if (customL && customL.trim() && !T[customL] && !AI_TRANSLATION_CACHE[customL]) {
@@ -3226,7 +3251,7 @@ When answering questions about which doctor to see, refer to the matched doctors
         const userNoInsurance = prefs && prefs.insurance === "No Insurance";
 
         // Hard filter: no-insurance users only see doctors that accept them
-        let pool = userNoInsurance ? DOCTORS.filter(d => d.acceptsNoInsurance) : DOCTORS;
+        let pool = userNoInsurance ? ACTIVE_DOCTORS.filter(d => d.acceptsNoInsurance) : ACTIVE_DOCTORS;
 
         // Language hard filter if user requires it
         const langStrict = prefs?.languageStrict || "Preferred — show bilingual doctors first";
@@ -3266,12 +3291,14 @@ When answering questions about which doctor to see, refer to the matched doctors
   };
 
   const noInsurance = prefs && prefs.insurance==="No Insurance";
+  // Use real NPPES doctors for US users, fall back to demo doctors for others
+  const ACTIVE_DOCTORS = realDoctors.length > 0 ? realDoctors : DOCTORS;
 
   if (screen==="landing") return <LangContext.Provider value={landingLang}><LandingScreen onGetStarted={()=>setScreen("login")} lang={landingLang} setLang={setLandingLang} /></LangContext.Provider>;
   if (screen==="login") return <LangContext.Provider value={appLang}><LoginScreen onLogin={handleLogin} lang={appLang} /></LangContext.Provider>;
   if (screen==="onboarding") return <LangContext.Provider value={appLang}><OnboardingScreen onComplete={handleOnboardingComplete} lang={appLang} /></LangContext.Provider>;
 
-  const specialties = ["All",...new Set(DOCTORS.map(d=>d.specialty))];
+  const specialties = ["All",...new Set(ACTIVE_DOCTORS.map(d=>d.specialty))];
   const urgencyColor = { low:"#3AAD8E", medium:"#F5A623", high:"#E05C5C" };
   const urgencyLabel = { low:"Non-urgent", medium:"See a doctor soon", high:"Seek care today" };
 
@@ -3673,7 +3700,7 @@ When answering questions about which doctor to see, refer to the matched doctors
               const prefLang = prefs&&prefs.language&&prefs.language!=="Other"?prefs.language:null;
               const prefGender = prefs&&prefs.doctorGender&&prefs.doctorGender!=="No preference"?prefs.doctorGender:null;
               const searchLower = browseSearch.trim().toLowerCase();
-              let filtered = DOCTORS.filter(d=>filterSpec==="All"||d.specialty===filterSpec);
+              let filtered = ACTIVE_DOCTORS.filter(d=>filterSpec==="All"||d.specialty===filterSpec);
               filtered = filtered.filter(d=>d.distance<=maxDistance);
               // If user has no insurance, only show doctors that accept uninsured patients
               if (noInsurance) filtered = filtered.filter(d => d.acceptsNoInsurance);
