@@ -1877,66 +1877,68 @@ function BookingModal({ doc, onClose, onConfirm, prefs }) {
 
 function LandingScreen({ onGetStarted, lang, setLang }) {
   const t = useT();
-  const [expandedBox, setExpandedBox] = useState(null);
-  const [demoTooltip, setDemoTooltip] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const [customLang, setCustomLang] = useState("");
   const [translating, setTranslating] = useState(false);
   const [translateProgress, setTranslateProgress] = useState(0);
   const [translateLangName, setTranslateLangName] = useState("");
   const [translateError, setTranslateError] = useState("");
+
   const LANGS = ["English","Spanish","French","Arabic","Hindi","Mandarin","Portuguese","Swahili","Other..."];
 
-  const boxes = [
-    { id:"symptoms",    emoji:"🩺", label:t("checkSymptoms"),  color:"#E8614A", bg:"linear-gradient(135deg,#E8614A,#F0956A)", height:200, desc:t("checkSymptomsDesc") },
-    { id:"doctors",     emoji:"👨‍⚕️", label:t("findDoctor"),    color:"#3AAD8E", bg:"linear-gradient(135deg,#3AAD8E,#5ECFB0)", height:220, desc:t("findDoctorDesc") },
-    { id:"noinsurance", emoji:"🤝", label:t("noInsurance"),    color:"#7B5EA7", bg:"linear-gradient(135deg,#7B5EA7,#A07DD4)", height:190, desc:t("noInsuranceDesc") },
-    { id:"aegis",       emoji:"🛡️", label:t("aegisAI"),        color:"#E8A93A", bg:"linear-gradient(135deg,#E8A93A,#F5C96A)", height:210, desc:t("aegisAIDesc") },
+  // Color palette
+  const C = {
+    teal:    "#0D9488",
+    tealLight: "#14B8A6",
+    blue:    "#0EA5E9",
+    blueDark:"#0369A1",
+    green:   "#10B981",
+    greenLight:"#34D399",
+    white:   "#FFFFFF",
+    offWhite:"#F0FDFA",
+    gray:    "#64748B",
+    grayLight:"#E2E8F0",
+    dark:    "#0F172A",
+    cardBg:  "#FFFFFF",
+  };
+
+  const features = [
+    { emoji:"🩺", title:t("featSymptomTitle")||"Symptom Checker", desc:t("featSymptomDesc")||"Describe your symptoms and get AI-powered guidance on what kind of care you need." },
+    { emoji:"🌐", title:t("featLangTitle")||"Any Language", desc:t("featLangDesc")||"MediGuide speaks your language — supporting dozens of languages including custom AI translation." },
+    { emoji:"🛡️", title:t("featInsTitle")||"No Insurance? No Problem", desc:t("featInsDesc")||"Find free clinics, sliding scale care, and coverage programs near you." },
+    { emoji:"📍", title:t("featLocTitle")||"Find Nearby Doctors", desc:t("featLocDesc")||"Real licensed doctors matched to your location, specialty needs, and preferences." },
+  ];
+
+  const stats = [
+    { number:"50+", label:"Languages Supported" },
+    { number:"6M+", label:"Licensed Doctors" },
+    { number:"100%", label:"Free to Use" },
   ];
 
   return (
-    <div style={{ fontFamily:"system-ui,sans-serif", minHeight:"100vh", color:"#1a1a2e", overflowX:"hidden" }}>
+    <div style={{ fontFamily:"'Georgia', serif", minHeight:"100vh", background:C.offWhite, color:C.dark, overflowX:"hidden" }}>
 
-      {/* ── TRANSLATION PROGRESS OVERLAY ── */}
+      {/* Translation overlay */}
       {translating && (
         <div style={{ position:"fixed", inset:0, background:"#00000077", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center" }}>
-          <div style={{ background:"#1a1a2e", border:"1.5px solid #4A90D944", borderRadius:20, padding:"32px 36px", width:300, textAlign:"center", boxShadow:"0 16px 64px #00000066" }}>
+          <div style={{ background:C.white, borderRadius:20, padding:"32px 36px", width:300, textAlign:"center", boxShadow:"0 16px 64px #00000033" }}>
             <div style={{ fontSize:36, marginBottom:12 }}>{translateError ? "⚠️" : "🌐"}</div>
-            <div style={{ color:"#fff", fontWeight:800, fontSize:16, fontFamily:"Georgia,serif", marginBottom:4 }}>
+            <div style={{ color:C.dark, fontWeight:800, fontSize:16, marginBottom:4 }}>
               {translateError ? "Translation failed" : `Translating to ${translateLangName}`}
             </div>
-
             {translateError ? (
               <>
-                <div style={{ color:"#ff8888", fontSize:11, marginBottom:16, lineHeight:1.5, wordBreak:"break-all", background:"#ffffff0a", borderRadius:8, padding:"8px 10px" }}>
-                  {translateError}
-                </div>
+                <div style={{ color:"#E05C5C", fontSize:12, marginBottom:16, background:"#FEE2E2", borderRadius:8, padding:"8px 10px" }}>{translateError}</div>
                 <button onClick={() => { setTranslating(false); setTranslateError(""); setTranslateProgress(0); }}
-                  style={{ background:"#4A90D9", border:"none", borderRadius:10, padding:"10px 24px", fontSize:13, fontWeight:700, color:"#fff", cursor:"pointer" }}>
-                  Dismiss
-                </button>
+                  style={{ background:C.teal, border:"none", borderRadius:10, padding:"10px 24px", fontSize:13, fontWeight:700, color:C.white, cursor:"pointer" }}>Dismiss</button>
               </>
             ) : (
               <>
-                <div style={{ color:"#4A90D9", fontSize:12, marginBottom:20 }}>
-                  {translateProgress === 0 ? "Starting translation..." :
-                   translateProgress <= 33 ? "Translating batch 1 of 3..." :
-                   translateProgress <= 66 ? "Translating batch 2 of 3..." :
-                   translateProgress < 100 ? "Translating batch 3 of 3..." : "✓ Done!"}
+                <div style={{ color:C.teal, fontSize:12, marginBottom:16 }}>
+                  {translateProgress < 100 ? `${Math.round(translateProgress)}% complete...` : "✓ Done!"}
                 </div>
-                <div style={{ background:"#ffffff15", borderRadius:99, height:10, overflow:"hidden", marginBottom:10 }}>
-                  <div style={{
-                    height:"100%",
-                    width: `${Math.min(translateProgress, 100)}%`,
-                    background: translateProgress === 100
-                      ? "linear-gradient(90deg,#3AAD8E,#4A90D9)"
-                      : "linear-gradient(90deg,#4A90D9,#7B5EA7)",
-                    borderRadius:99,
-                    transition:"width 0.35s ease"
-                  }}/>
-                </div>
-                <div style={{ color:"#aaa", fontSize:13, fontWeight:700 }}>
-                  {Math.min(Math.round(translateProgress), 100)}%
+                <div style={{ background:C.grayLight, borderRadius:99, height:8, overflow:"hidden" }}>
+                  <div style={{ height:"100%", width:`${Math.min(translateProgress,100)}%`, background:`linear-gradient(90deg,${C.teal},${C.blue})`, borderRadius:99, transition:"width 0.35s ease" }}/>
                 </div>
               </>
             )}
@@ -1944,47 +1946,35 @@ function LandingScreen({ onGetStarted, lang, setLang }) {
         </div>
       )}
 
-      {/* ── HERO — dark ── */}
-      <div style={{ background:"linear-gradient(160deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%)", padding:"0 24px 56px", position:"relative", overflow:"hidden" }}>
-
-        {/* Background blobs */}
-        <div style={{ position:"absolute", top:-80, right:-80, width:300, height:300, borderRadius:"50%", background:"#4A90D918", pointerEvents:"none" }}/>
-        <div style={{ position:"absolute", bottom:-60, left:-60, width:220, height:220, borderRadius:"50%", background:"#7B5EA718", pointerEvents:"none" }}/>
-
-        {/* Nav */}
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"20px 0", marginBottom:16 }}>
+      {/* ── NAV ── */}
+      <nav style={{ background:C.white, borderBottom:`1px solid ${C.grayLight}`, padding:"0 24px", position:"sticky", top:0, zIndex:100, boxShadow:"0 1px 8px #0000000a" }}>
+        <div style={{ maxWidth:1100, margin:"0 auto", display:"flex", alignItems:"center", justifyContent:"space-between", height:60 }}>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <div style={{ width:38, height:38, background:"linear-gradient(135deg,#4A90D9,#7B5EA7)", borderRadius:11, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>⚕</div>
-            <div>
-              <div style={{ color:"#fff", fontWeight:800, fontSize:20, fontFamily:"Georgia,serif" }}>MediGuide</div>
-              <div style={{ color:"#4A90D9", fontSize:10, letterSpacing:1.5, fontWeight:600 }}>{t("tagline")}</div>
-            </div>
+            <div style={{ width:36, height:36, background:`linear-gradient(135deg,${C.teal},${C.blue})`, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>⚕</div>
+            <span style={{ fontWeight:800, fontSize:20, color:C.dark, fontFamily:"Georgia,serif" }}>MediGuide</span>
           </div>
-          <div style={{ display:"flex", gap:10, alignItems:"center" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
             {/* Language selector */}
             <div style={{ position:"relative" }}>
               <button onClick={()=>setLangOpen(o=>!o)}
-                style={{ background:"#ffffff15", border:"1px solid #ffffff22", color:"#fff", borderRadius:10, padding:"7px 12px", fontSize:12, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:6 }}>
+                style={{ background:C.offWhite, border:`1px solid ${C.grayLight}`, color:C.dark, borderRadius:8, padding:"6px 12px", fontSize:12, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", gap:6 }}>
                 🌐 {translating ? "Translating..." : lang}
               </button>
               {langOpen && (
-                <div style={{ position:"absolute", top:"calc(100% + 6px)", right:0, background:"#1a1a2e", border:"1px solid #ffffff22", borderRadius:12, overflow:"hidden", zIndex:100, minWidth:160, boxShadow:"0 8px 32px #00000044" }}>
+                <div style={{ position:"absolute", top:"calc(100% + 6px)", right:0, background:C.white, border:`1px solid ${C.grayLight}`, borderRadius:12, overflow:"hidden", zIndex:100, minWidth:180, boxShadow:"0 8px 32px #00000018" }}>
                   {LANGS.map(l => (
                     <button key={l} onClick={async ()=>{
-                      if (l === "Other...") return; // handled below
+                      if (l === "Other...") return;
                       setLang(l); setLangOpen(false);
                     }}
-                      style={{ display:"block", width:"100%", background: l===lang?"#4A90D933":"transparent", border:"none", color: l===lang?"#4A90D9":"#ccc", padding:"9px 14px", fontSize:13, fontWeight: l===lang?700:400, cursor:"pointer", textAlign:"left" }}>
-                      {l===lang ? "✓ " : ""}{l}
+                      style={{ display:"block", width:"100%", background:l===lang?`${C.teal}11`:"transparent", border:"none", color:l===lang?C.teal:C.dark, padding:"9px 14px", fontSize:13, fontWeight:l===lang?700:400, cursor:"pointer", textAlign:"left" }}>
+                      {l===lang?"✓ ":""}{l}
                     </button>
                   ))}
-                  {/* Custom language input */}
-                  <div style={{ borderTop:"1px solid #ffffff11", padding:"10px 12px" }}>
-                    <div style={{ fontSize:11, color:"#888", marginBottom:6 }}>Type any language:</div>
+                  <div style={{ borderTop:`1px solid ${C.grayLight}`, padding:"10px 12px" }}>
+                    <div style={{ fontSize:11, color:C.gray, marginBottom:6 }}>Type any language:</div>
                     <div style={{ display:"flex", gap:6 }}>
-                      <input
-                        value={customLang}
-                        onChange={e=>setCustomLang(e.target.value)}
+                      <input value={customLang} onChange={e=>setCustomLang(e.target.value)}
                         onKeyDown={async e=>{
                           if (e.key==="Enter" && customLang.trim().length > 1) {
                             const l = customLang.trim();
@@ -1992,18 +1982,11 @@ function LandingScreen({ onGetStarted, lang, setLang }) {
                             const interval = setInterval(() => setTranslateProgress(p => p < 80 ? p + 1.5 : p), 300);
                             const result = await translateToLanguage(l, (pct) => setTranslateProgress(p => Math.max(p, pct)));
                             clearInterval(interval);
-                            if (result.ok) {
-                              setTranslateProgress(100);
-                              setTimeout(() => { setLang(l); setTranslating(false); setTranslateProgress(0); setCustomLang(""); }, 700);
-                            } else {
-                              setTranslateError(result.error);
-                              setTranslateProgress(0);
-                            }
+                            if (result.ok) { setTranslateProgress(100); setTimeout(() => { setLang(l); setTranslating(false); setTranslateProgress(0); setCustomLang(""); }, 700); }
+                            else { setTranslateError(result.error); setTranslateProgress(0); }
                           }
                         }}
-                        placeholder="e.g. Yoruba..."
-                        style={{ flex:1, background:"#ffffff0d", border:"1px solid #ffffff22", borderRadius:8, padding:"6px 8px", fontSize:12, color:"#fff", outline:"none" }}
-                      />
+                        placeholder="e.g. Telugu..." style={{ flex:1, background:C.offWhite, border:`1px solid ${C.grayLight}`, borderRadius:8, padding:"6px 8px", fontSize:12, color:C.dark, outline:"none" }}/>
                       <button onClick={async ()=>{
                         if (customLang.trim().length < 2) return;
                         const l = customLang.trim();
@@ -2011,231 +1994,148 @@ function LandingScreen({ onGetStarted, lang, setLang }) {
                         const interval = setInterval(() => setTranslateProgress(p => p < 80 ? p + 1.5 : p), 300);
                         const result = await translateToLanguage(l, (pct) => setTranslateProgress(p => Math.max(p, pct)));
                         clearInterval(interval);
-                        if (result.ok) {
-                          setTranslateProgress(100);
-                          setTimeout(() => { setLang(l); setTranslating(false); setTranslateProgress(0); setCustomLang(""); }, 700);
-                        } else {
-                          setTranslateError(result.error);
-                          setTranslateProgress(0);
-                        }
-                      }}
-                        style={{ background:"#4A90D9", border:"none", borderRadius:8, padding:"6px 10px", fontSize:12, color:"#fff", fontWeight:700, cursor:"pointer" }}>
-                        Go
-                      </button>
+                        if (result.ok) { setTranslateProgress(100); setTimeout(() => { setLang(l); setTranslating(false); setTranslateProgress(0); setCustomLang(""); }, 700); }
+                        else { setTranslateError(result.error); setTranslateProgress(0); }
+                      }} style={{ background:C.teal, border:"none", borderRadius:8, padding:"6px 10px", fontSize:12, color:C.white, fontWeight:700, cursor:"pointer" }}>Go</button>
                     </div>
                   </div>
                 </div>
               )}
             </div>
             <button onClick={onGetStarted}
-              style={{ background:"transparent", border:"1.5px solid #4A90D9", color:"#4A90D9", borderRadius:10, padding:"8px 18px", fontSize:13, fontWeight:700, cursor:"pointer" }}>
+              style={{ background:"transparent", border:`1.5px solid ${C.teal}`, color:C.teal, borderRadius:8, padding:"7px 16px", fontSize:13, fontWeight:700, cursor:"pointer" }}>
               {t("login")}
+            </button>
+            <button onClick={onGetStarted}
+              style={{ background:`linear-gradient(135deg,${C.teal},${C.blue})`, border:"none", color:C.white, borderRadius:8, padding:"8px 18px", fontSize:13, fontWeight:700, cursor:"pointer" }}>
+              {t("getStarted")||"Get Started →"}
             </button>
           </div>
         </div>
+      </nav>
 
-        {/* Hero content */}
-        <div style={{ maxWidth:500, margin:"36px auto 0", textAlign:"center" }}>
-          <div style={{ display:"inline-block", background:"#4A90D922", border:"1px solid #4A90D944", borderRadius:20, padding:"5px 16px", fontSize:12, color:"#4A90D9", fontWeight:700, letterSpacing:1, marginBottom:22 }}>
-            {t("freeBadge")}
+      {/* ── HERO ── */}
+      <div style={{ background:`linear-gradient(135deg,${C.teal} 0%,${C.blue} 60%,${C.green} 100%)`, padding:"80px 24px 100px", textAlign:"center", position:"relative", overflow:"hidden" }}>
+        {/* Decorative circles */}
+        <div style={{ position:"absolute", top:-60, right:-60, width:250, height:250, borderRadius:"50%", background:"#ffffff15", pointerEvents:"none" }}/>
+        <div style={{ position:"absolute", bottom:-80, left:-40, width:200, height:200, borderRadius:"50%", background:"#ffffff10", pointerEvents:"none" }}/>
+        <div style={{ position:"absolute", top:"30%", left:"5%", width:100, height:100, borderRadius:"50%", background:"#ffffff08", pointerEvents:"none" }}/>
+
+        <div style={{ maxWidth:680, margin:"0 auto", position:"relative" }}>
+          <div style={{ display:"inline-block", background:"#ffffff22", border:"1px solid #ffffff44", borderRadius:20, padding:"5px 16px", fontSize:12, color:C.white, fontWeight:700, letterSpacing:1, marginBottom:24 }}>
+            {t("freeBadge")||"✨ FREE FOR EVERYONE"}
           </div>
-
-          {/* Hero title with globe background */}
-          <div style={{ position:"relative", marginBottom:18 }}>
-            {/* Globe SVG */}
-            <svg viewBox="0 0 300 180" style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", width:"110%", maxWidth:420, opacity:0.13, pointerEvents:"none" }} xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <radialGradient id="globeGrad" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#7B5EA7"/>
-                  <stop offset="100%" stopColor="#4A90D9"/>
-                </radialGradient>
-              </defs>
-              {/* Outer circle */}
-              <circle cx="150" cy="90" r="82" fill="none" stroke="url(#globeGrad)" strokeWidth="1.5"/>
-              {/* Latitude lines */}
-              {[-50,-28,0,28,50].map((offset,i) => {
-                const cy = 90 + offset;
-                const r = Math.sqrt(82*82 - offset*offset);
-                return <ellipse key={i} cx="150" cy={cy} rx={r} ry={r*0.28} fill="none" stroke="#4A90D9" strokeWidth="1" opacity="0.8"/>;
-              })}
-              {/* Longitude lines */}
-              {[0,36,72,108,144].map((angle,i) => (
-                <ellipse key={i} cx="150" cy="90" rx={82*Math.abs(Math.cos(angle*Math.PI/180))||6} ry="82" fill="none" stroke="#7B5EA7" strokeWidth="1" opacity="0.8"
-                  transform={`rotate(${angle} 150 90)`}/>
-              ))}
-              {/* Continents - simplified blobs */}
-              <path d="M120,58 Q135,50 148,55 Q158,52 165,60 Q170,70 162,78 Q150,82 138,78 Q124,73 120,58Z" fill="#4A90D9" opacity="0.6"/>
-              <path d="M155,65 Q168,58 178,62 Q185,68 182,76 Q174,80 163,76 Q155,72 155,65Z" fill="#7B5EA7" opacity="0.5"/>
-              <path d="M108,80 Q118,74 128,78 Q133,86 128,94 Q118,98 110,93 Q104,86 108,80Z" fill="#4A90D9" opacity="0.5"/>
-              <path d="M148,88 Q162,83 172,88 Q178,96 172,104 Q160,110 148,106 Q140,99 148,88Z" fill="#7B5EA7" opacity="0.5"/>
-              <path d="M125,100 Q134,96 142,100 Q145,107 140,112 Q132,114 125,110 Q121,105 125,100Z" fill="#3AAD8E" opacity="0.5"/>
-              <path d="M168,75 Q176,72 182,76 Q184,82 178,85 Q172,86 167,82 Q165,78 168,75Z" fill="#3AAD8E" opacity="0.4"/>
-            </svg>
-
-            <h1 style={{ fontFamily:"Georgia,serif", fontSize:38, fontWeight:800, color:"#fff", margin:0, lineHeight:1.2, position:"relative" }}>
-              {t("heroTitle1")}<br/>
-              <span style={{ background:"linear-gradient(90deg,#4A90D9,#7B5EA7)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
-                {t("heroTitle2")}
-              </span>
-            </h1>
-          </div>
-          <p style={{ fontSize:16, color:"#c0d8ff", lineHeight:1.75, margin:"0 0 34px" }}>
-            {t("heroSubtext")}
+          <h1 style={{ color:C.white, fontWeight:800, fontSize:"clamp(32px,5vw,52px)", fontFamily:"Georgia,serif", lineHeight:1.2, marginBottom:16 }}>
+            {t("heroTitle")||"Healthcare Navigation
+for Everyone"}
+          </h1>
+          <p style={{ color:"rgba(255,255,255,0.88)", fontSize:18, lineHeight:1.7, marginBottom:36, maxWidth:520, margin:"0 auto 36px" }}>
+            {t("heroSub")||"Find the right doctor, in your language, for your budget — no matter where you are in the world."}
           </p>
-
-          {/* CTA buttons */}
           <div style={{ display:"flex", gap:12, justifyContent:"center", flexWrap:"wrap" }}>
             <button onClick={onGetStarted}
-              style={{ background:"linear-gradient(135deg,#4A90D9,#7B5EA7)", color:"#fff", border:"none", borderRadius:14, padding:"15px 32px", fontSize:15, fontWeight:800, cursor:"pointer", boxShadow:"0 8px 32px #4A90D944" }}>
-              {t("getStarted")}
+              style={{ background:C.white, color:C.teal, border:"none", borderRadius:12, padding:"14px 32px", fontSize:16, fontWeight:800, cursor:"pointer", boxShadow:"0 4px 20px #00000022" }}>
+              {t("getStarted")||"Get Started — It's Free →"}
             </button>
-            <div style={{ position:"relative" }}>
-              <button
-                onMouseEnter={()=>setDemoTooltip(true)}
-                onMouseLeave={()=>setDemoTooltip(false)}
-                style={{ background:"transparent", border:"1.5px solid #ffffff33", color:"#ffffff99", borderRadius:14, padding:"15px 32px", fontSize:15, fontWeight:700, cursor:"not-allowed" }}>
-                {t("seeDemo")}
-              </button>
-              {demoTooltip && (
-                <div style={{ position:"absolute", bottom:"calc(100% + 8px)", left:"50%", transform:"translateX(-50%)", background:"#fff", color:"#1a1a2e", fontSize:12, fontWeight:600, padding:"6px 12px", borderRadius:8, whiteSpace:"nowrap", boxShadow:"0 4px 16px #00000022", zIndex:10 }}>
-                  {t("comingSoon")}
-                </div>
-              )}
-            </div>
           </div>
-
-          <div style={{ marginTop:16, fontSize:13, color:"#ffffff44" }}>
-            {t("alreadyAccount")}{" "}
-            <span onClick={onGetStarted} style={{ color:"#4A90D9", cursor:"pointer", fontWeight:600 }}>{t("login")}</span>
+          {/* Stats */}
+          <div style={{ display:"flex", gap:32, justifyContent:"center", marginTop:48, flexWrap:"wrap" }}>
+            {stats.map(s => (
+              <div key={s.label} style={{ textAlign:"center" }}>
+                <div style={{ color:C.white, fontWeight:800, fontSize:28, fontFamily:"Georgia,serif" }}>{s.number}</div>
+                <div style={{ color:"rgba(255,255,255,0.75)", fontSize:12, marginTop:2 }}>{s.label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* ── WHAT MEDIGUIDE DOES — light ── */}
-      <div style={{ background:"linear-gradient(160deg,#f8fbff,#eef4ff)", padding:"52px 24px" }}>
-        <div style={{ maxWidth:620, margin:"0 auto" }}>
+      {/* ── MISSION STATEMENT ── */}
+      <div style={{ background:C.white, padding:"64px 24px", textAlign:"center" }}>
+        <div style={{ maxWidth:700, margin:"0 auto" }}>
+          <div style={{ width:48, height:4, background:`linear-gradient(90deg,${C.teal},${C.blue})`, borderRadius:2, margin:"0 auto 24px" }}/>
+          <h2 style={{ fontSize:28, fontWeight:800, fontFamily:"Georgia,serif", color:C.dark, marginBottom:16 }}>
+            {t("missionTitle")||"Our Mission"}
+          </h2>
+          <p style={{ fontSize:17, color:C.gray, lineHeight:1.8 }}>
+            {t("missionDesc")||"Millions of people avoid seeking medical care not because care doesn't exist — but because navigating the healthcare system is overwhelming. Language barriers, insurance confusion, and not knowing what specialist to see keep people from the care they deserve. MediGuide is the bridge."}
+          </p>
+        </div>
+      </div>
 
-          {/* Section header */}
-          <div style={{ textAlign:"center", marginBottom:10 }}>
-            <div style={{ fontSize:12, fontWeight:700, color:"#4A90D9", letterSpacing:1.5, marginBottom:10 }}>{t("whatWeDo")}</div>
-            <h2 style={{ fontFamily:"Georgia,serif", fontSize:26, fontWeight:800, color:"#1a1a2e", margin:"0 0 10px" }}>{t("everythingYouNeed")}</h2>
-            <p style={{ fontSize:14, color:"#888", margin:"0 0 28px", lineHeight:1.6 }}>
-              {t("tapToLearn")}
-            </p>
+      {/* ── FEATURES ── */}
+      <div style={{ background:C.offWhite, padding:"64px 24px" }}>
+        <div style={{ maxWidth:900, margin:"0 auto" }}>
+          <h2 style={{ fontSize:26, fontWeight:800, fontFamily:"Georgia,serif", color:C.dark, textAlign:"center", marginBottom:48 }}>
+            {t("featuresTitle")||"Everything You Need to Find Care"}
+          </h2>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))", gap:20 }}>
+            {features.map((f,i) => (
+              <div key={i} style={{ background:C.white, borderRadius:16, padding:24, border:`1px solid ${C.grayLight}`, boxShadow:"0 2px 12px #0000000a" }}>
+                <div style={{ fontSize:32, marginBottom:12 }}>{f.emoji}</div>
+                <div style={{ fontWeight:700, fontSize:15, color:C.dark, marginBottom:8, fontFamily:"Georgia,serif" }}>{f.title}</div>
+                <div style={{ fontSize:13, color:C.gray, lineHeight:1.6 }}>{f.desc}</div>
+              </div>
+            ))}
           </div>
+        </div>
+      </div>
 
-          {/* Colorful boxes grid */}
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:40 }}>
-            {boxes.map((box) => (
-              <div key={box.id}
-                onClick={()=>setExpandedBox(expandedBox===box.id ? null : box.id)}
-                style={{
-                  background: box.bg,
-                  borderRadius:20,
-                  padding:"22px 18px",
-                  cursor:"pointer",
-                  minHeight: expandedBox===box.id ? "auto" : box.height,
-                  display:"flex",
-                  flexDirection:"column",
-                  justifyContent:"space-between",
-                  boxShadow: expandedBox===box.id ? "0 8px 32px "+box.color+"55" : "0 4px 16px "+box.color+"22",
-                  transform: expandedBox===box.id ? "scale(1.02)" : "scale(1)",
-                  transition:"all 0.2s ease",
-                  border: expandedBox===box.id ? "2px solid "+box.color : "2px solid transparent",
-                }}>
+      {/* ── HOW IT WORKS ── */}
+      <div style={{ background:C.white, padding:"64px 24px" }}>
+        <div style={{ maxWidth:700, margin:"0 auto", textAlign:"center" }}>
+          <h2 style={{ fontSize:26, fontWeight:800, fontFamily:"Georgia,serif", color:C.dark, marginBottom:48 }}>
+            {t("howTitle")||"How It Works"}
+          </h2>
+          <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
+            {[
+              { step:"1", title:t("step1Title")||"Describe Your Symptoms", desc:t("step1Desc")||"Tell us what you're feeling. Our AI asks follow-up questions to understand your needs." },
+              { step:"2", title:t("step2Title")||"Get Matched to Doctors", desc:t("step2Desc")||"We find licensed doctors near you who match your language, insurance, and preferences." },
+              { step:"3", title:t("step3Title")||"Book an Appointment", desc:t("step3Desc")||"Request an appointment directly through the app — no phone calls needed." },
+            ].map((s,i) => (
+              <div key={i} style={{ display:"flex", gap:20, alignItems:"flex-start", textAlign:"left", background:C.offWhite, borderRadius:16, padding:20, border:`1px solid ${C.grayLight}` }}>
+                <div style={{ width:40, height:40, borderRadius:"50%", background:`linear-gradient(135deg,${C.teal},${C.blue})`, color:C.white, fontWeight:800, fontSize:18, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>{s.step}</div>
                 <div>
-                  <div style={{ fontSize:32, marginBottom:10 }}>{box.emoji}</div>
-                  <div style={{ fontWeight:800, fontSize:16, color:"#fff", fontFamily:"Georgia,serif", marginBottom: expandedBox===box.id ? 10 : 0 }}>
-                    {box.label}
-                  </div>
-                  {expandedBox===box.id && (
-                    <div style={{ fontSize:13, color:"#ffffffcc", lineHeight:1.65, marginTop:6 }}>
-                      {box.desc}
-                    </div>
-                  )}
-                </div>
-                <div style={{ fontSize:11, color:"#ffffff88", fontWeight:600, marginTop:12, textAlign:"right" }}>
-                  {expandedBox===box.id ? t("tapClose") : t("tapMore")}
+                  <div style={{ fontWeight:700, fontSize:15, color:C.dark, marginBottom:4 }}>{s.title}</div>
+                  <div style={{ fontSize:13, color:C.gray, lineHeight:1.6 }}>{s.desc}</div>
                 </div>
               </div>
             ))}
           </div>
+        </div>
+      </div>
 
-          {/* Aegis disclaimer */}
-          <div style={{ background:"linear-gradient(135deg,#1a1a2e,#16213e)", borderRadius:18, padding:"20px 22px", marginBottom:32, display:"flex", gap:16, alignItems:"flex-start" }}>
-            <div style={{ width:44, height:44, borderRadius:12, background:"linear-gradient(135deg,#4A90D9,#7B5EA7)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="#fff"/>
-              </svg>
-            </div>
-            <div>
-              <div style={{ fontWeight:800, fontSize:14, color:"#fff", marginBottom:5 }}>{t("aboutAegis")}</div>
-              <div style={{ fontSize:13, color:"#c0d8ff", lineHeight:1.65 }}>
-                {t("aegisDisclaimer")} <strong style={{ color:"#fff" }}>{t("aegisWarning")}</strong> {t("aegisNote")}
-              </div>
-            </div>
-          </div>
-
-          {/* Reviews section */}
-          <div style={{ background:"#fff", borderRadius:20, padding:"32px 24px", border:"1.5px solid #e8eeff", boxShadow:"0 4px 20px #4A90D90a", marginBottom:24, textAlign:"center" }}>
-            <div style={{ fontSize:36, marginBottom:12 }}>💬</div>
-            <h3 style={{ fontFamily:"Georgia,serif", fontSize:22, fontWeight:800, color:"#1a1a2e", margin:"0 0 10px" }}>{t("gettingStarted")}</h3>
-            <p style={{ fontSize:14, color:"#888", lineHeight:1.7, margin:"0 0 6px" }}>{t("reviewDesc1")}</p>
-            <p style={{ fontSize:14, color:"#888", lineHeight:1.7, margin:"0 0 24px" }}>{t("reviewDesc2")}</p>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:20 }}>
-              {[t("reviewFirst"), t("reviewHelp"), t("reviewImprove")].map((placeholder, i) => (
-                <div key={i} style={{ background:"linear-gradient(160deg,#f8fbff,#eef4ff)", border:"1.5px dashed #c0d8ff", borderRadius:14, padding:"18px 14px", display:"flex", flexDirection:"column", alignItems:"center", gap:8 }}>
-                  <div style={{ fontSize:22 }}>{"⭐".repeat(5)}</div>
-                  <div style={{ fontSize:12, color:"#aaa", fontStyle:"italic", lineHeight:1.5 }}>{placeholder}</div>
-                </div>
-              ))}
-            </div>
-            <div style={{ fontSize:12, color:"#bbb", marginBottom:20 }}>{t("realReviews")}</div>
-            <button onClick={onGetStarted}
-              style={{ background:"linear-gradient(135deg,#4A90D9,#7B5EA7)", color:"#fff", border:"none", borderRadius:12, padding:"12px 28px", fontSize:14, fontWeight:700, cursor:"pointer", boxShadow:"0 4px 16px #4A90D933" }}>
-              {t("tryAndShare")}
-            </button>
-          </div>
-
-          {/* Report a problem */}
-          <div style={{ background:"linear-gradient(135deg,#fff8f0,#fff3e8)", borderRadius:20, padding:"24px", border:"1.5px solid #fde8cc", marginBottom:24, display:"flex", gap:16, alignItems:"center" }}>
-            <div style={{ width:48, height:48, borderRadius:14, background:"linear-gradient(135deg,#E8614A,#F0956A)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>🐛</div>
-            <div style={{ flex:1 }}>
-              <div style={{ fontWeight:800, fontSize:15, color:"#1a1a2e", marginBottom:4 }}>{t("foundProblem")}</div>
-              <div style={{ fontSize:13, color:"#888", lineHeight:1.6 }}>{t("reportDesc")}</div>
-            </div>
-            <a href="https://forms.gle/a2AYmKMgZmYVkQEL6" target="_blank" rel="noopener noreferrer"
-              style={{ background:"linear-gradient(135deg,#E8614A,#F0956A)", color:"#fff", border:"none", borderRadius:12, padding:"10px 18px", fontSize:13, fontWeight:700, cursor:"pointer", textDecoration:"none", whiteSpace:"nowrap", flexShrink:0 }}>
-              {t("reportIt")}
-            </a>
-          </div>
-
-          {/* Bottom CTA */}
-          <div style={{ textAlign:"center", background:"#fff", borderRadius:20, padding:"32px 24px", border:"1.5px solid #e8eeff", boxShadow:"0 4px 20px #4A90D90a" }}>
-            <div style={{ fontSize:28, marginBottom:10 }}>🏥</div>
-            <h3 style={{ fontFamily:"Georgia,serif", fontSize:22, fontWeight:800, color:"#1a1a2e", margin:"0 0 10px" }}>{t("readyTitle")}</h3>
-            <p style={{ fontSize:14, color:"#888", margin:"0 0 22px", lineHeight:1.6 }}>{t("readyDesc")}</p>
-            <button onClick={onGetStarted}
-              style={{ background:"linear-gradient(135deg,#4A90D9,#7B5EA7)", color:"#fff", border:"none", borderRadius:14, padding:"14px 36px", fontSize:15, fontWeight:800, cursor:"pointer", boxShadow:"0 4px 20px #4A90D933" }}>
-              {t("createAccount")}
-            </button>
-          </div>
-
+      {/* ── CTA ── */}
+      <div style={{ background:`linear-gradient(135deg,${C.teal},${C.blue})`, padding:"64px 24px", textAlign:"center" }}>
+        <div style={{ maxWidth:500, margin:"0 auto" }}>
+          <h2 style={{ color:C.white, fontWeight:800, fontSize:28, fontFamily:"Georgia,serif", marginBottom:12 }}>
+            {t("ctaTitle")||"Ready to find your care?"}
+          </h2>
+          <p style={{ color:"rgba(255,255,255,0.85)", fontSize:16, marginBottom:32 }}>
+            {t("ctaDesc")||"Join thousands of people navigating healthcare with confidence."}
+          </p>
+          <button onClick={onGetStarted}
+            style={{ background:C.white, color:C.teal, border:"none", borderRadius:12, padding:"14px 36px", fontSize:16, fontWeight:800, cursor:"pointer", boxShadow:"0 4px 20px #00000022" }}>
+            {t("createAccount")||"Create Free Account →"}
+          </button>
         </div>
       </div>
 
       {/* ── FOOTER ── */}
-      <div style={{ background:"#1a1a2e", padding:"20px 24px", textAlign:"center" }}>
+      <div style={{ background:C.dark, padding:"32px 24px", textAlign:"center" }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, marginBottom:8 }}>
-          <div style={{ width:24, height:24, background:"linear-gradient(135deg,#4A90D9,#7B5EA7)", borderRadius:7, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13 }}>⚕</div>
-          <span style={{ color:"#fff", fontWeight:700, fontSize:14, fontFamily:"Georgia,serif" }}>MediGuide</span>
+          <div style={{ width:28, height:28, background:`linear-gradient(135deg,${C.teal},${C.blue})`, borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}>⚕</div>
+          <span style={{ color:C.white, fontWeight:800, fontSize:16, fontFamily:"Georgia,serif" }}>MediGuide</span>
         </div>
-        <div style={{ fontSize:11, color:"#ffffff44", lineHeight:1.6 }}>{t("disclaimer")}</div>
+        <div style={{ color:"#64748B", fontSize:12 }}>
+          {t("disclaimer")||"MediGuide is a navigation tool, not a medical provider. Always consult a licensed healthcare professional for medical advice."}
+        </div>
       </div>
 
     </div>
   );
 }
+
 
 // ── LOGIN ─────────────────────────────────────────────────────────────────────
 
@@ -3620,6 +3520,25 @@ When answering questions about which doctor to see, refer to the matched doctors
         {tab==="browse" && (
           <div>
             <h2 style={{ fontFamily:"Georgia,serif", fontSize:22, fontWeight:800, margin:"0 0 14px" }}>{t("doctorsNearYou")}</h2>
+
+            {/* NON-US DOCTOR NOTICE */}
+            {prefs?.country && prefs.country !== "United States" && (
+              <div style={{ background:"linear-gradient(135deg,#f0fff8,#e8fff4)", border:"1.5px solid #3AAD8E", borderRadius:14, padding:"14px 16px", marginBottom:14 }}>
+                <div style={{ fontWeight:700, fontSize:13, color:"#1a6b4a", marginBottom:4 }}>🌍 Real Doctor Data Coming to {prefs.country}!</div>
+                <div style={{ fontSize:12, color:"#3AAD8E", lineHeight:1.6 }}>
+                  We currently have real licensed doctor data for the United States via the NPPES registry. 
+                  For your country, we are showing representative doctors while we work on expanding our coverage globally. 
+                  Real doctor data for {prefs.country} is on our roadmap!
+                </div>
+              </div>
+            )}
+
+            {/* NPPES SOURCE BANNER */}
+            {doctorsSource === "nppes" && (
+              <div style={{ background:"#f0f7ff", border:"1px solid #c0d8ff", borderRadius:10, padding:"8px 14px", marginBottom:14, fontSize:12, color:"#4A90D9", display:"flex", alignItems:"center", gap:8 }}>
+                <span>✅</span> Showing real licensed doctors from the US National Provider Registry (NPPES)
+              </div>
+            )}
 
             {/* FROM SYMPTOMS BANNER */}
             {browseFromSymptoms && (
