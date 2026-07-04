@@ -195,4 +195,6 @@ This project is licensed under the MIT License.
 
 Developed by **Saber483**
 
+Mentored by **Rellendula26**
+
 If you found this project interesting, consider giving the repository a ⭐ on GitHub.
